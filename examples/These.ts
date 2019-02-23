@@ -10,9 +10,9 @@ export type These<A, B> = {
     readonly right: B;
 };
 
-export function left<A, B>(left: A): These<A, B> { return { type: "Left", left }; }
+export function left<A>(left: A): These<A, never> { return { type: "Left", left }; }
 
-export function right<A, B>(right: B): These<A, B> { return { type: "Right", right }; }
+export function right<B>(right: B): These<never, B> { return { type: "Right", right }; }
 
 export function both<A, B>(left: A, right: B): These<A, B> { return { type: "Both", left, right }; }
 

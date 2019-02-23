@@ -113,3 +113,16 @@ export const isRecursiveMember = (m: Member, d: Data): boolean => m.type.kind ==
 export const isRecursive = (d: Data): boolean => {
   return d.constructors.toArray().some(c => c.members.some(m => isRecursiveMember(m, d)))
 }
+
+export const typeUsesTypeParameter = (t: Type, id: Identifier): boolean => {
+  switch (t.kind) {
+    case 'Unit':
+      return false
+    case 'Tuple':
+      return t.types.some(tt => typeUsesTypeParameter(tt, id))
+    case 'Fun':
+      return typeUsesTypeParameter(t.domain, id) || typeUsesTypeParameter(t.codomain, id)
+    case 'Ref':
+      return t.name === id || t.parameters.some(tt => typeUsesTypeParameter(tt, id))
+  }
+}

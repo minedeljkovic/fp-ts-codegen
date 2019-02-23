@@ -107,14 +107,16 @@ const getTypeAliasDeclaration = (
   )
 }
 
+const getTypeParameterDeclaration = (p: M.ParameterDeclaration): ts.TypeParameterDeclaration => {
+  return ts.createTypeParameterDeclaration(p.name, p.constraint.map(getTypeNode).toUndefined())
+}
+
 /**
  * @example
  * Constrained<A extends string>
  */
 const getDataTypeParameterDeclarations = (d: M.Data): Array<ts.TypeParameterDeclaration> => {
-  return d.parameterDeclarations.map(p =>
-    ts.createTypeParameterDeclaration(p.name, p.constraint.map(getTypeNode).toUndefined())
-  )
+  return d.parameterDeclarations.map(getTypeParameterDeclaration)
 }
 
 /**
@@ -429,7 +431,9 @@ const getLiteralNullaryConstructor = (c: M.Constructor, d: M.Data): AST<ts.Node>
 const getLiteralConstructor = (c: M.Constructor, d: M.Data): AST<ts.Node> => {
   return new Reader(e => {
     const name = getFirstLetterLowerCase(c.name)
-    const typeParameters = getDataTypeParameterDeclarations(d)
+    const typeParameters = d.parameterDeclarations
+      .filter(p => c.members.some(m => M.typeUsesTypeParameter(m.type, p.name)))
+      .map(getTypeParameterDeclaration)
     const parameters = c.members.map((m, position) => {
       const name = getMemberName(m, position)
       const type = getTypeNode(m.type)
@@ -448,7 +452,15 @@ const getLiteralConstructor = (c: M.Constructor, d: M.Data): AST<ts.Node> => {
         )
       )
     ])
-    return getFunctionDeclaration(name, typeParameters, parameters, getDataType(d), body)
+    const type = ts.createTypeReferenceNode(
+      d.name,
+      d.parameterDeclarations.map(p =>
+        c.members.some(m => M.typeUsesTypeParameter(m.type, p.name))
+          ? ts.createTypeReferenceNode(p.name, A.empty)
+          : ts.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
+      )
+    )
+    return getFunctionDeclaration(name, typeParameters, parameters, type, body)
   })
 }
 
@@ -470,7 +482,9 @@ const getFptsNullaryConstructor = (c: M.Constructor, d: M.Data): AST<ts.Node> =>
 const getFptsConstructor = (c: M.Constructor, d: M.Data): AST<ts.Node> => {
   return new Reader(_ => {
     const name = getFirstLetterLowerCase(c.name)
-    const typeParameters = getDataTypeParameterDeclarations(d)
+    const typeParameters = d.parameterDeclarations
+      .filter(p => c.members.some(m => M.typeUsesTypeParameter(m.type, p.name)))
+      .map(getTypeParameterDeclaration)
     const parameters = c.members.map((m, position) => {
       const name = getMemberName(m, position)
       const type = getTypeNode(m.type)
@@ -487,7 +501,15 @@ const getFptsConstructor = (c: M.Constructor, d: M.Data): AST<ts.Node> => {
         )
       )
     ])
-    return getFunctionDeclaration(name, typeParameters, parameters, getDataType(d), body)
+    const type = ts.createTypeReferenceNode(
+      d.name,
+      d.parameterDeclarations.map(p =>
+        c.members.some(m => M.typeUsesTypeParameter(m.type, p.name))
+          ? ts.createTypeReferenceNode(p.name, A.empty)
+          : ts.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
+      )
+    )
+    return getFunctionDeclaration(name, typeParameters, parameters, type, body)
   })
 }
 

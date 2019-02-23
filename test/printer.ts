@@ -172,12 +172,15 @@ describe('printer', () => {
           'export function some<A>(value0: A): Option<A> { return { type: "Some", value0 }; }'
         ])
         assertPrinterEqual(P.constructors, E.Either, [
-          'export function left<L, R>(value0: L): Either<L, R> { return { type: "Left", value0 }; }',
-          'export function right<L, R>(value0: R): Either<L, R> { return { type: "Right", value0 }; }'
+          'export function left<L>(value0: L): Either<L, never> { return { type: "Left", value0 }; }',
+          'export function right<R>(value0: R): Either<never, R> { return { type: "Right", value0 }; }'
         ])
         assertPrinterEqual(P.constructors, E.Tree, [
           'export const leaf: Tree<never> = { type: "Leaf" };',
           'export function node<A>(value0: Tree<A>, value1: A, value2: Tree<A>): Tree<A> { return { type: "Node", value0, value1, value2 }; }'
+        ])
+        assertPrinterEqual(P.constructors, E.Writer, [
+          'export function writer<W, A>(value0: () => [A, W]): Writer<W, A> { return { value0 }; }'
         ])
       })
 
@@ -358,6 +361,15 @@ export class GotData<A extends string> {
           [
             'export const none: Option<never> = None.value;',
             'export function some<A>(value0: A): Option<A> { return new Some(value0); }'
+          ],
+          fptsEncodingOptions
+        )
+        assertPrinterEqual(
+          P.constructors,
+          E.Either,
+          [
+            'export function left<L>(value0: L): Either<L, never> { return new Left(value0); }',
+            'export function right<R>(value0: R): Either<never, R> { return new Right(value0); }'
           ],
           fptsEncodingOptions
         )
