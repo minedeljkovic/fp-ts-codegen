@@ -25,6 +25,10 @@ export function _none<A>(): Prism<Option<A>, Option<A>> { return Prism.fromPredi
 
 export function _some<A>(): Prism<Option<A>, Option<A>> { return Prism.fromPredicate(s => s.type === "Some"); }
 
+import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";
+
+export function getSomePrism<A>(): Prism<Option<A>, A> { return new Prism(fa => fa.type === "Some" ? optionSome(fa.value0) : optionNone, value => some(value)); }
+
 import { Setoid, fromEquals } from "fp-ts/lib/Setoid";
 
 export function getSetoid<A>(setoidSomeValue0: Setoid<A>): Setoid<Option<A>> { return fromEquals((x, y) => { if (x.type === "None" && y.type === "None") {

@@ -441,6 +441,24 @@ export class GotData<A extends string> {
     })
   })
 
+  describe('unary prisms', () => {
+    it('should handle non sum types', () => {
+      assertPrinterEqual(P.unaryPrisms, E.User, [])
+    })
+
+    it('should handle monomorphic data', () => {
+      assertPrinterEqual(P.unaryPrisms, E.FooBarBaz, [])
+    })
+
+    it('should handle non generic sums', () => {
+      assertPrinterEqual(P.unaryPrisms, E.NonGenericSum, [
+        'import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";',
+        'export const leftPrism: Prism<NonGenericSum, string> = new Prism(fa => fa.type === "Left" ? optionSome(fa.value0) : optionNone, value => left(value));',
+        'export const rightPrism: Prism<NonGenericSum, number> = new Prism(fa => fa.type === "Right" ? optionSome(fa.value0) : optionNone, value => right(value));'
+      ])
+    })
+  })
+
   describe('setoid', () => {
     it('should handle monomorphic data', () => {
       assertPrinterEqual(P.setoid, E.FooBarBaz, [
@@ -499,6 +517,10 @@ import { Prism } from "monocle-ts";
 export function _none<A>(): Prism<Option<A>, Option<A>> { return Prism.fromPredicate(s => s.tag === "None"); }
 
 export function _some<A>(): Prism<Option<A>, Option<A>> { return Prism.fromPredicate(s => s.tag === "Some"); }
+
+import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";
+
+export function getSomePrism<A>(): Prism<Option<A>, A> { return new Prism(fa => fa.tag === "Some" ? optionSome(fa.value0) : optionNone, value => some(value)); }
 
 import { Setoid, fromEquals } from \"fp-ts/lib/Setoid\";
 

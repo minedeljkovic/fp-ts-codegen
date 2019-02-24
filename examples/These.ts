@@ -30,6 +30,12 @@ export function _right<A, B>(): Prism<These<A, B>, These<A, B>> { return Prism.f
 
 export function _both<A, B>(): Prism<These<A, B>, These<A, B>> { return Prism.fromPredicate(s => s.type === "Both"); }
 
+import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";
+
+export function getLeftPrism<A, B>(): Prism<These<A, B>, A> { return new Prism(fa => fa.type === "Left" ? optionSome(fa.left) : optionNone, value => left(value)); }
+
+export function getRightPrism<A, B>(): Prism<These<A, B>, B> { return new Prism(fa => fa.type === "Right" ? optionSome(fa.right) : optionNone, value => right(value)); }
+
 import { Setoid, fromEquals } from "fp-ts/lib/Setoid";
 
 export function getSetoid<A, B>(setoidLeftLeft: Setoid<A>, setoidRightRight: Setoid<B>, setoidBothLeft: Setoid<A>, setoidBothRight: Setoid<B>): Setoid<These<A, B>> { return fromEquals((x, y) => { if (x.type === "Left" && y.type === "Left") {

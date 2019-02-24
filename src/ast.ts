@@ -735,6 +735,78 @@ export const prisms = (d: M.Data): AST<Array<ts.Node>> => {
   })
 }
 
+export const unaryPrisms = (d: M.Data): AST<Array<ts.Node>> => {
+  return ask<Options>().chain(e => {
+    if (!M.isSum(d)) {
+      return reader.of(A.empty)
+    }
+
+    const unaryConstructors = d.constructors.toArray().filter(c => c.members.length === 1)
+    if (unaryConstructors.length === 0) {
+      return reader.of(A.empty)
+    }
+
+    const getType = (m: M.Member) => {
+      return ts.createTypeReferenceNode('Prism', [getDataType(d), getTypeNode(m.type)])
+    }
+    const getPrism = (m: M.Member, name: string) => {
+      return ts.createNew(ts.createIdentifier('Prism'), undefined, [
+        getArrowFunction(
+          [e.matcheeName],
+          ts.createConditional(
+            getStrictEquals(
+              ts.createPropertyAccess(ts.createIdentifier(e.matcheeName), e.tagName),
+              ts.createStringLiteral(name)
+            ),
+            ts.createToken(ts.SyntaxKind.QuestionToken),
+            ts.createCall(ts.createIdentifier('optionSome'), undefined, [
+              ts.createPropertyAccess(ts.createIdentifier(e.matcheeName), getMemberName(m, 0))
+            ]),
+            ts.createToken(ts.SyntaxKind.ColonToken),
+            ts.createIdentifier('optionNone')
+          )
+        ),
+        getArrowFunction(
+          ['value'],
+          ts.createCall(ts.createIdentifier(`${getFirstLetterLowerCase(name)}`), undefined, [
+            ts.createIdentifier('value')
+          ])
+        )
+      ])
+    }
+    const optionConstructorsImport = ts.createImportDeclaration(
+      A.empty,
+      A.empty,
+      ts.createImportClause(
+        undefined,
+        ts.createNamedImports([
+          ts.createImportSpecifier(ts.createIdentifier('some'), ts.createIdentifier('optionSome')),
+          ts.createImportSpecifier(ts.createIdentifier('none'), ts.createIdentifier('optionNone'))
+        ])
+      ),
+      ts.createStringLiteral('fp-ts/lib/Option')
+    )
+    if (M.isPolymorphic(d)) {
+      const typeParameters: Array<ts.TypeParameterDeclaration> = getDataTypeParameterDeclarations(d)
+      return reader.of([
+        optionConstructorsImport,
+        ...unaryConstructors.map<ts.Node>(c => {
+          const m = c.members[0]
+          const body = ts.createBlock([ts.createReturn(getPrism(m, c.name))])
+          return getFunctionDeclaration(`get${c.name}Prism`, typeParameters, A.empty, getType(m), body)
+        })
+      ])
+    }
+    return reader.of([
+      optionConstructorsImport,
+      ...unaryConstructors.map(c => {
+        const m = c.members[0]
+        return getConstantDeclaration(`${getFirstLetterLowerCase(c.name)}Prism`, getPrism(m, c.name), getType(m))
+      })
+    ])
+  })
+}
+
 const semigroupBinaryExpression: S.Semigroup<ts.Expression> = {
   concat: (x, y) => ts.createBinary(x, ts.SyntaxKind.AmpersandAmpersandToken, y)
 }

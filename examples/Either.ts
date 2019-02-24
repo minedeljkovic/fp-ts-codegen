@@ -21,6 +21,12 @@ export function _left<L, R>(): Prism<Either<L, R>, Either<L, R>> { return Prism.
 
 export function _right<L, R>(): Prism<Either<L, R>, Either<L, R>> { return Prism.fromPredicate(s => s.type === "Right"); }
 
+import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";
+
+export function getLeftPrism<L, R>(): Prism<Either<L, R>, L> { return new Prism(fa => fa.type === "Left" ? optionSome(fa.value0) : optionNone, value => left(value)); }
+
+export function getRightPrism<L, R>(): Prism<Either<L, R>, R> { return new Prism(fa => fa.type === "Right" ? optionSome(fa.value0) : optionNone, value => right(value)); }
+
 import { Setoid, fromEquals } from "fp-ts/lib/Setoid";
 
 export function getSetoid<L, R>(setoidLeftValue0: Setoid<L>, setoidRightValue0: Setoid<R>): Setoid<Either<L, R>> { return fromEquals((x, y) => { if (x.type === "Left" && y.type === "Left") {

@@ -92,3 +92,9 @@ export const NotAlignedNames = M.data(
   [],
   M.constructor('Ctor', [M.member(M.ref('string'), some('value'))])
 )
+
+// data NonGenericSum = Left string | Right number | Nullary
+export const NonGenericSum = M.data('NonGenericSum', [], M.constructor('Left', [M.member(M.ref('string'))]), [
+  M.constructor('Right', [M.member(M.ref('number'))]),
+  M.constructor('Nullary')
+])

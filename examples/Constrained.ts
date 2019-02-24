@@ -25,6 +25,10 @@ export function _fetching<A extends string>(): Prism<Constrained<A>, Constrained
 
 export function _gotData<A extends string>(): Prism<Constrained<A>, Constrained<A>> { return Prism.fromPredicate(s => s.type === "GotData"); }
 
+import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";
+
+export function getGotDataPrism<A extends string>(): Prism<Constrained<A>, A> { return new Prism(fa => fa.type === "GotData" ? optionSome(fa.value0) : optionNone, value => gotData(value)); }
+
 import { Setoid, fromEquals } from "fp-ts/lib/Setoid";
 
 export function getSetoid<A extends string>(setoidGotDataValue0: Setoid<A>): Setoid<Constrained<A>> { return fromEquals((x, y) => { if (x.type === "Fetching" && y.type === "Fetching") {
