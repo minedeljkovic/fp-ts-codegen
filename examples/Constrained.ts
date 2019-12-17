@@ -5,7 +5,7 @@ export type Constrained<A extends string> = {
     readonly value0: A;
 };
 
-export const fetching: Constrained<string> = { type: "Fetching" };
+export const fetching: Constrained<never> = { type: "Fetching" };
 
 export function gotData<A extends string>(value0: A): Constrained<A> { return { type: "GotData", value0 }; }
 

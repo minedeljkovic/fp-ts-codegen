@@ -126,9 +126,7 @@ const getDataTypeParameterDeclarations = (d: M.Data): Array<ts.TypeParameterDecl
 const getDataTypeReferenceWithNever = (d: M.Data): ts.TypeReferenceNode => {
   return ts.createTypeReferenceNode(
     d.name,
-    d.parameterDeclarations.map(p =>
-      p.constraint.map(c => getTypeNode(c)).getOrElse(ts.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword))
-    )
+    d.parameterDeclarations.map(_ => ts.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword))
   )
 }
 

@@ -380,7 +380,7 @@ export class GotData<A extends string> {
           P.constructors,
           E.Constrained,
           [
-            'export const fetching: Constrained<string> = Fetching.value;',
+            'export const fetching: Constrained<never> = Fetching.value;',
             'export function gotData<A extends string>(value0: A): Constrained<A> { return new GotData(value0); }'
           ],
           fptsEncodingOptions
