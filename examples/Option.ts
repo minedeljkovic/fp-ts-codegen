@@ -29,11 +29,3 @@ import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";
 
 export function getSomePrism<A>(): Prism<Option<A>, A> { return new Prism(fa => fa.type === "Some" ? optionSome(fa.value0) : optionNone, value => some(value)); }
 
-import { Setoid, fromEquals } from "fp-ts/lib/Setoid";
-
-export function getSetoid<A>(setoidSomeValue0: Setoid<A>): Setoid<Option<A>> { return fromEquals((x, y) => { if (x.type === "None" && y.type === "None") {
-    return true;
-} if (x.type === "Some" && y.type === "Some") {
-    return setoidSomeValue0.equals(x.value0, y.value0);
-} return false; }); }
-

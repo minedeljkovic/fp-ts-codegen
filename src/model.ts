@@ -108,12 +108,6 @@ export const isEnum = (d: Data): boolean => {
   return d.constructors.toArray().every(isNullary)
 }
 
-export const isRecursiveMember = (m: Member, d: Data): boolean => m.type.kind === 'Ref' && m.type.name === d.name
-
-export const isRecursive = (d: Data): boolean => {
-  return d.constructors.toArray().some(c => c.members.some(m => isRecursiveMember(m, d)))
-}
-
 export const typeUsesTypeParameter = (t: Type, id: Identifier): boolean => {
   switch (t.kind) {
     case 'Unit':

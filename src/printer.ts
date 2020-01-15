@@ -35,10 +35,6 @@ export const unaryPrisms = (d: M.Data): Printer<Array<string>> => {
   return Ast.unaryPrisms(d).map(nodes => nodes.map(ast))
 }
 
-export const setoid = (d: M.Data): Printer<Array<string>> => {
-  return Ast.setoid(d).map(nodes => nodes.map(ast))
-}
-
 export const getMonoid = <A>(M: Mon.Monoid<A>): Mon.Monoid<Printer<A>> => {
   return {
     concat: (x, y) => new Reader(e => M.concat(x.run(e), y.run(e))),
@@ -49,14 +45,7 @@ export const getMonoid = <A>(M: Mon.Monoid<A>): Mon.Monoid<Printer<A>> => {
 const monoidPrinter: Mon.Monoid<Printer<Array<string>>> = getMonoid(Mon.getArrayMonoid<string>())
 
 export const all = (d: M.Data): Printer<Array<string>> => {
-  return Mon.fold(monoidPrinter)([
-    data(d).map(array.of),
-    constructors(d),
-    folds(d),
-    prisms(d),
-    unaryPrisms(d),
-    setoid(d)
-  ])
+  return Mon.fold(monoidPrinter)([data(d).map(array.of), constructors(d), folds(d), prisms(d), unaryPrisms(d)])
 }
 
 export const print = (d: M.Data, options: Ast.Options): string => {

@@ -40,13 +40,3 @@ export const leftPrism: Prism<NonGenericSum, string> = new Prism(fa => fa.type =
 
 export const rightPrism: Prism<NonGenericSum, number> = new Prism(fa => fa.type === "Right" ? optionSome(fa.value0) : optionNone, value => right(value));
 
-import { Setoid, fromEquals } from "fp-ts/lib/Setoid";
-
-export function getSetoid(setoidLeftValue0: Setoid<string>, setoidRightValue0: Setoid<number>): Setoid<NonGenericSum> { return fromEquals((x, y) => { if (x.type === "Left" && y.type === "Left") {
-    return setoidLeftValue0.equals(x.value0, y.value0);
-} if (x.type === "Right" && y.type === "Right") {
-    return setoidRightValue0.equals(x.value0, y.value0);
-} if (x.type === "Nullary" && y.type === "Nullary") {
-    return true;
-} return false; }); }
-

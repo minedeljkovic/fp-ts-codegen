@@ -3,8 +3,6 @@ import { Reader, reader, ask } from 'fp-ts/lib/Reader'
 import * as ts from 'typescript'
 import * as M from './model'
 import { Lens } from 'monocle-ts'
-import { tuple } from 'fp-ts/lib/function'
-import * as S from 'fp-ts/lib/Semigroup'
 import * as A from 'fp-ts/lib/Array'
 
 export interface Options {
@@ -365,18 +363,13 @@ const getFirstLetterLowerCase = (name: string): string => {
   return name.substring(0, 1).toLocaleLowerCase() + name.substring(1)
 }
 
-const getFirstLetterUpperCase = (name: string): string => {
-  return name.substring(0, 1).toLocaleUpperCase() + name.substring(1)
-}
-
 const getConstantDeclaration = (
   name: string,
   initializer: ts.Expression,
-  type?: ts.TypeReferenceNode,
-  isExported: boolean = true
+  type?: ts.TypeReferenceNode
 ): ts.VariableStatement => {
   return ts.createVariableStatement(
-    isExported ? [ts.createModifier(ts.SyntaxKind.ExportKeyword)] : A.empty,
+    [ts.createModifier(ts.SyntaxKind.ExportKeyword)],
     ts.createVariableDeclarationList([ts.createVariableDeclaration(name, type, initializer)], ts.NodeFlags.Const)
   )
 }
@@ -805,83 +798,6 @@ export const unaryPrisms = (d: M.Data): AST<Array<ts.Node>> => {
   })
 }
 
-const semigroupBinaryExpression: S.Semigroup<ts.Expression> = {
-  concat: (x, y) => ts.createBinary(x, ts.SyntaxKind.AmpersandAmpersandToken, y)
-}
-
 const getStrictEquals = (left: ts.Expression, right: ts.Expression): ts.BinaryExpression => {
   return ts.createBinary(left, ts.SyntaxKind.EqualsEqualsEqualsToken, right)
-}
-
-export const setoid = (d: M.Data): AST<Array<ts.Node>> => {
-  const isSum = M.isSum(d)
-  if (!isSum && M.isNullary(d.constructors.head)) {
-    return reader.of(A.empty)
-  }
-  const getMemberSetoidName = (c: M.Constructor, m: M.Member, position: number): string => {
-    let s = 'setoid'
-    if (isSum) {
-      s += c.name
-    }
-    return s + getFirstLetterUpperCase(getMemberName(m, position))
-  }
-  const constructors = d.constructors.toArray()
-  const setoidsParameters = A.array.chain(constructors, c => {
-    return c.members
-      .map((m, position) => tuple(m, position))
-      .filter(([m]) => !M.isRecursiveMember(m, d))
-      .map(([m, position]) => {
-        const type = ts.createTypeReferenceNode('Setoid', [getTypeNode(m.type)])
-        return getParameterDeclaration(getMemberSetoidName(c, m, position), type)
-      })
-  })
-  const getReturnValue = (c: M.Constructor): ts.Expression => {
-    return A.foldL(
-      c.members,
-      () => ts.createTrue(),
-      () => {
-        const callExpressions = c.members.map((m, position) => {
-          const setoidName = M.isRecursiveMember(m, d) ? 'S' : getMemberSetoidName(c, m, position)
-          const memberName = getMemberName(m, position)
-          return ts.createCall(ts.createPropertyAccess(ts.createIdentifier(setoidName), 'equals'), A.empty, [
-            ts.createPropertyAccess(ts.createIdentifier('x'), memberName),
-            ts.createPropertyAccess(ts.createIdentifier('y'), memberName)
-          ])
-        })
-        return S.fold(semigroupBinaryExpression)(callExpressions[0])(callExpressions.slice(1))
-      }
-    )
-  }
-  return ask<Options>().chain(e => {
-    const setoidImport = getImportDeclaration(['Setoid', 'fromEquals'], 'fp-ts/lib/Setoid')
-    const ifs = [
-      ...constructors.map(c => {
-        return ts.createIf(
-          semigroupBinaryExpression.concat(
-            getStrictEquals(ts.createPropertyAccess(ts.createIdentifier('x'), e.tagName), ts.createLiteral(c.name)),
-            getStrictEquals(ts.createPropertyAccess(ts.createIdentifier('y'), e.tagName), ts.createLiteral(c.name))
-          ),
-          ts.createBlock([ts.createReturn(getReturnValue(c))])
-        )
-      }),
-      ts.createReturn(ts.createFalse())
-    ]
-    const statements: Array<ts.Statement> = []
-    if (isSum) {
-      statements.push(...ifs)
-    } else {
-      statements.push(ts.createReturn(getReturnValue(d.constructors.head)))
-    }
-    const arrowFunction = getArrowFunction(['x', 'y'], ts.createBlock(statements))
-    const setoid = ts.createCall(ts.createIdentifier('fromEquals'), A.empty, [arrowFunction])
-    const returnType = ts.createTypeReferenceNode('Setoid', [getDataType(d)])
-    const body = M.isRecursive(d)
-      ? [getConstantDeclaration('S', setoid, returnType, false), ts.createReturn(ts.createIdentifier('S'))]
-      : [ts.createReturn(setoid)]
-    const typeParameters: Array<ts.TypeParameterDeclaration> = getDataTypeParameterDeclarations(d)
-    return reader.of([
-      setoidImport,
-      getFunctionDeclaration('getSetoid', typeParameters, setoidsParameters, returnType, ts.createBlock(body))
-    ])
-  })
 }

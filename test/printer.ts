@@ -459,33 +459,6 @@ export class GotData<A extends string> {
     })
   })
 
-  describe('setoid', () => {
-    it('should handle monomorphic data', () => {
-      assertPrinterEqual(P.setoid, E.FooBarBaz, [
-        'import { Setoid, fromEquals } from "fp-ts/lib/Setoid";',
-        'export function getSetoid(): Setoid<FooBarBaz> { return fromEquals((x, y) => { if (x.type === "Foo" && y.type === "Foo") {\n    return true;\n} if (x.type === "Bar" && y.type === "Bar") {\n    return true;\n} if (x.type === "Baz" && y.type === "Baz") {\n    return true;\n} return false; }); }'
-      ])
-    })
-
-    it('should handle monomorphic nullary', () => {
-      assertPrinterEqual(P.setoid, E.Nullary, [])
-    })
-
-    it('should handle non sum types', () => {
-      assertPrinterEqual(P.setoid, E.User, [
-        'import { Setoid, fromEquals } from "fp-ts/lib/Setoid";',
-        'export function getSetoid(setoidName: Setoid<string>, setoidSurname: Setoid<string>, setoidAge: Setoid<number>): Setoid<User> { return fromEquals((x, y) => { return setoidName.equals(x.name, y.name) && setoidSurname.equals(x.surname, y.surname) && setoidAge.equals(x.age, y.age); }); }'
-      ])
-    })
-
-    it('should handle recursive data structures', () => {
-      assertPrinterEqual(P.setoid, E.Tree, [
-        'import { Setoid, fromEquals } from "fp-ts/lib/Setoid";',
-        'export function getSetoid<A>(setoidNodeValue1: Setoid<A>): Setoid<Tree<A>> { const S: Setoid<Tree<A>> = fromEquals((x, y) => { if (x.type === "Leaf" && y.type === "Leaf") {\n    return true;\n} if (x.type === "Node" && y.type === "Node") {\n    return S.equals(x.value0, y.value0) && setoidNodeValue1.equals(x.value1, y.value1) && S.equals(x.value2, y.value2);\n} return false; }); return S; }'
-      ])
-    })
-  })
-
   describe('options', () => {
     it('should handle custom tag names', () => {
       const printer = P.print
@@ -520,15 +493,7 @@ export function _some<A>(): Prism<Option<A>, Option<A>> { return Prism.fromPredi
 
 import { some as optionSome, none as optionNone } from "fp-ts/lib/Option";
 
-export function getSomePrism<A>(): Prism<Option<A>, A> { return new Prism(fa => fa.tag === "Some" ? optionSome(fa.value0) : optionNone, value => some(value)); }
-
-import { Setoid, fromEquals } from \"fp-ts/lib/Setoid\";
-
-export function getSetoid<A>(setoidSomeValue0: Setoid<A>): Setoid<Option<A>> { return fromEquals((x, y) => { if (x.tag === "None" && y.tag === "None") {
-    return true;
-} if (x.tag === "Some" && y.tag === "Some") {
-    return setoidSomeValue0.equals(x.value0, y.value0);
-} return false; }); }`
+export function getSomePrism<A>(): Prism<Option<A>, A> { return new Prism(fa => fa.tag === "Some" ? optionSome(fa.value0) : optionNone, value => some(value)); }`
       )
     })
 
